@@ -18,7 +18,7 @@ app.get('/start', (req, res) => {
   const ffmpeg = spawn('ffmpeg', [
     '-f', 'v4l2',
     '-input_format', 'mjpeg',
-    '-video_size', '1280x720',
+    '-video_size', '1920x1080',
     '-i', '/dev/video0',
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
