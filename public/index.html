@@ -14,15 +14,20 @@
         console.log("WebSocket connected");
       });
 
-      ws.addEventListener('message', (event) => {
-        if (typeof event.data === 'string') {
-          video.src = `data:image/jpeg;base64,${event.data}`;
-        } else {
+      ws.binaryType = "arraybuffer"; // Set binaryType to 'arraybuffer'
+
+      ws.addEventListener("message", (event) => {
+        if (event.data instanceof ArrayBuffer) {
+          const data = new Uint8Array(event.data);
+          const blob = new Blob([data], { type: "image/jpeg" });
+
           const reader = new FileReader();
           reader.onload = () => {
-            video.src = reader.result; // Use reader.result directly
+            video.src = reader.result;
           };
-          reader.readAsDataURL(event.data);
+          reader.readAsDataURL(blob);
+        } else {
+          video.src = `data:image/jpeg;base64,${event.data}`;
         }
       });
     </script>
