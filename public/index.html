@@ -14,8 +14,16 @@
         console.log("WebSocket connected");
       });
 
-      ws.addEventListener("message", (event) => {
-        video.src = `data:image/jpeg;base64,${event.data}`;
+      ws.addEventListener('message', (event) => {
+        if (typeof event.data === 'string') {
+          video.src = `data:image/jpeg;base64,${event.data}`;
+        } else {
+          const reader = new FileReader();
+          reader.onload = () => {
+            video.src = reader.result; // Use reader.result directly
+          };
+          reader.readAsDataURL(event.data);
+        }
       });
     </script>
   </body>
