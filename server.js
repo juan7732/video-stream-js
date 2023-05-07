@@ -26,17 +26,16 @@ wss.on('connection', (ws) => {
 
   let imageBuffer = Buffer.alloc(0);
 
-  // Handle FFmpeg output and send it to WebSocket clients
   ffmpeg.stdout.on('data', (data) => {
     imageBuffer = Buffer.concat([imageBuffer, data]);
-
-    const boundaryIndex = imageBuffer.indexOf(Buffer.from('--ffmpeg', 'ascii'));
-    console.log(boundaryIndex)
-    if (boundaryIndex > -1) {
-      const imageData = imageBuffer.slice(0, boundaryIndex);
-      imageBuffer = imageBuffer.slice(boundaryIndex + 8);
-
-      ws.send(imageData, { binary: true });
+  
+    const boundaryIndex = imageBuffer.indexOf(Buffer.from('\xFF\xD8\xFF', 'binary'));
+    const endIndex = imageBuffer.indexOf(Buffer.from('\xFF\xD9', 'binary'), boundaryIndex) + 2;
+    if (boundaryIndex > -1 && endIndex > -1) {
+      const imageData = imageBuffer.slice(boundaryIndex, endIndex);
+      imageBuffer = imageBuffer.slice(endIndex);
+  
+      ws.send(imageData.toString('base64'));
     }
   });
 
