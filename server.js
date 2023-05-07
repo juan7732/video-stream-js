@@ -19,24 +19,14 @@ wss.on('connection', (ws) => {
     '-input_format', 'mjpeg',
     '-i', '/dev/video0',
     '-c:v', 'copy',
-    '-f', 'image2pipe',
-    '-vcodec', 'mjpeg',
+    '-f', 'mpjpeg',
+    '-boundary_tag', 'ffmpeg',
     '-'
   ]);
 
-  let imageBuffer = Buffer.alloc(0);
-
   // Handle FFmpeg output and send it to WebSocket clients
   ffmpeg.stdout.on('data', (data) => {
-    imageBuffer = Buffer.concat([imageBuffer, data]);
-
-    const boundaryIndex = imageBuffer.indexOf(Buffer.from('--ffmpeg', 'ascii'));
-    if (boundaryIndex > -1) {
-      const imageData = imageBuffer.slice(0, boundaryIndex);
-      imageBuffer = imageBuffer.slice(boundaryIndex + 8);
-
-      ws.send(imageData.toString('base64'));
-    }
+    ws.send(data);
   });
 
   ffmpeg.stderr.on('data', (data) => {
