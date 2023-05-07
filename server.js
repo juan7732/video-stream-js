@@ -47,20 +47,28 @@ app.get("/start", (req, res) => {
 app.listen(3000, () => {
   console.log("Video streaming server is running on http://localhost:3000");
 
-  // Clean up old HLS files on startup
-  fs.readdir("public/hls", (err, files) => {
-    if (err) {
-      console.error("Error reading public/hls directory:", err);
+  // Create 'public/hls' directory if it doesn't exist
+  fs.mkdir("public/hls", { recursive: true }, (err) => {
+    if (err && err.code !== "EEXIST") {
+      console.error("Error creating public/hls directory:", err);
       return;
     }
-    files.forEach((file) => {
-      if (file.endsWith(".ts") || file.endsWith(".m3u8")) {
-        fs.unlink(path.join("public/hls", file), (err) => {
-          if (err) {
-            console.error("Error deleting old HLS file:", err);
-          }
-        });
+
+    // Clean up old HLS files on startup
+    fs.readdir("public/hls", (err, files) => {
+      if (err) {
+        console.error("Error reading public/hls directory:", err);
+        return;
       }
+      files.forEach((file) => {
+        if (file.endsWith(".ts") || file.endsWith(".m3u8")) {
+          fs.unlink(path.join("public/hls", file), (err) => {
+            if (err) {
+              console.error("Error deleting old HLS file:", err);
+            }
+          });
+        }
+      });
     });
   });
 });
