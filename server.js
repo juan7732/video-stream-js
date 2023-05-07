@@ -46,16 +46,12 @@ app.get('/start', (req, res) => {
   ]);
 
   ffmpeg.stderr.on('data', (data) => {
-    console.error(`ffmpeg stderr: ${data}`);
+    console.log(`ffmpeg stderr: ${data}`);
   });
 
   ffmpeg.on('exit', (code, signal) => {
     console.log(`ffmpeg exited with code ${code} and signal ${signal}`);
     res.end();
-  });
-
-  req.on('close', () => {
-    ffmpeg.kill();
   });
 
   res.send('Started streaming');
