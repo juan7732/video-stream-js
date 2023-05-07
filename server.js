@@ -17,6 +17,7 @@ wss.on('connection', (ws) => {
   const ffmpeg = spawn('ffmpeg', [
     '-f', 'v4l2',
     '-input_format', 'mjpeg',
+    '-video_size', '1920x1080',
     '-i', '/dev/video0',
     '-c:v', 'copy',
     '-f', 'image2pipe',
