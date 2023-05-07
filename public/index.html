@@ -1,29 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Streaming</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-</head>
-<body>
-  <video id="video" controls autoplay></video>
-  <script>
-    const video = document.getElementById('video');
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.attachMedia(video);
-      fetch('/start').then(() => {
-        hls.loadSource('/hls/stream.m3u8');
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Webcam Stream</title>
+  </head>
+  <body>
+    <img id="video" />
+    <script>
+      const video = document.getElementById('video');
+      const ws = new WebSocket(`ws://${location.host}`);
+
+      ws.addEventListener('open', () => {
+        console.log('WebSocket connected');
       });
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error("HLS error:", data);
+
+      ws.addEventListener('message', (event) => {
+        if (typeof event.data === 'string') {
+          video.src = `data:image/jpeg;base64,${event.data}`;
+        } else {
+          const reader = new FileReader();
+          reader.onload = () => {
+            video.src = `data:image/jpeg;base64,${reader.result}`;
+          };
+          reader.readAsDataURL(event.data);
+        }
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = '/hls/stream.m3u8';
-    } else {
-      console.error('HLS is not supported in this browser.');
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

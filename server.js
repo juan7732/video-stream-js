@@ -1,78 +1,55 @@
 const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
 const { spawn } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 app.use(express.static("public"));
 
-app.get("/start", (req, res) => {
+wss.on("connection", (ws) => {
+  console.log("Client connected");
+
+  // Start the FFmpeg process for streaming the video from /dev/video0
   const ffmpeg = spawn("ffmpeg", [
+    "-f",
+    "v4l2",
+    "-input_format",
+    "mjpeg",
     "-i",
     "/dev/video0",
     "-c:v",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-tune",
-    "zerolatency",
-    "-max_muxing_queue_size",
-    "1024",
-    "-c:a",
-    "aac",
-    "-b:a",
-    "128k",
+    "copy",
     "-f",
-    "hls",
-    "-hls_time",
-    "2",
-    "-hls_list_size",
-    "10",
-    "-hls_flags",
-    "delete_segments",
-    "public/hls/stream.m3u8",
+    "mpjpeg",
+    "-boundary_tag",
+    "ffmpeg",
+    "-",
   ]);
 
+  // Handle FFmpeg output and send it to WebSocket clients
+  ffmpeg.stdout.on("data", (data) => {
+    ws.send(data);
+  });
+
   ffmpeg.stderr.on("data", (data) => {
-    console.error(`ffmpeg stderr: ${data}`);
+    console.log(`FFmpeg stderr: ${data}`);
   });
 
-  ffmpeg.on("exit", (code, signal) => {
-    console.error(`ffmpeg exited with code ${code} and signal ${signal}`);
+  ffmpeg.on("close", (code) => {
+    console.log(`FFmpeg process exited with code ${code}`);
   });
 
-  res.sendStatus(200);
+  ws.on("close", () => {
+    console.log("Client disconnected");
+    ffmpeg.kill("SIGINT");
+  });
 });
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-app.listen(3000, () => {
-  console.log("Video streaming server is running on http://localhost:3000");
-
-  // Create 'public/hls' directory if it doesn't exist
-  fs.mkdir("public/hls", { recursive: true }, (err) => {
-    if (err && err.code !== "EEXIST") {
-      console.error("Error creating public/hls directory:", err);
-      return;
-    }
-
-    // Clean up old HLS files on startup
-    fs.readdir("public/hls", (err, files) => {
-      if (err) {
-        console.error("Error reading public/hls directory:", err);
-        return;
-      }
-      files.forEach((file) => {
-        if (file.endsWith(".ts") || file.endsWith(".m3u8")) {
-          fs.unlink(path.join("public/hls", file), (err) => {
-            if (err) {
-              console.error("Error deleting old HLS file:", err);
-            }
-          });
-        }
-      });
-    });
-  });
+// Start the server
+const port = process.env.PORT || 8080;
+server.listen(port, () => {
+  console.log(`Server started on port ${port}`);
 });
