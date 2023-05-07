@@ -2,9 +2,27 @@
 <html>
   <head>
     <title>Raspberry Pi Camera Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   </head>
   <body>
-    <h1>Zora's Web Cam</h1>
-    <img src="/video" alt="Camera Stream" />
+    <h1>Zoras webcast</h1>
+    <video id="video" controls autoplay></video>
+    <button id="startButton">Start Streaming</button>
+    <script>
+      const video = document.getElementById("video");
+      const startButton = document.getElementById("startButton");
+      const hls = new Hls();
+
+      startButton.addEventListener("click", () => {
+        fetch("/start").then(() => {
+          if (Hls.isSupported()) {
+            hls.loadSource("/hls/stream.m3u8");
+            hls.attachMedia(video);
+          } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            video.src = "/hls/stream.m3u8";
+          }
+        });
+      });
+    </script>
   </body>
 </html>
