@@ -31,6 +31,7 @@ wss.on('connection', (ws) => {
     imageBuffer = Buffer.concat([imageBuffer, data]);
 
     const boundaryIndex = imageBuffer.indexOf(Buffer.from('--ffmpeg', 'ascii'));
+    console.log(boundaryIndex)
     if (boundaryIndex > -1) {
       const imageData = imageBuffer.slice(0, boundaryIndex);
       imageBuffer = imageBuffer.slice(boundaryIndex + 8);
