@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 const port = 3000;
 
-app.use(express.static('public'));
+app.use(express.static('public/hls'));
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
@@ -14,6 +14,19 @@ app.get('/start', (req, res) => {
   if (!fs.existsSync('public/hls')) {
     fs.mkdirSync('public/hls', { recursive: true });
   }
+
+  // Remove old HLS files before starting a new stream
+  fs.readdir('public/hls', (err, files) => {
+    if (err) throw err;
+
+    for (const file of files) {
+      fs.unlink(path.join('public/hls', file), (err) => {
+        if (err) throw err;
+      });
+    }
+  });
+
+
 
   const ffmpeg = spawn('ffmpeg', [
     '-f', 'v4l2',
