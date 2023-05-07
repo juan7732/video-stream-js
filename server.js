@@ -1,63 +1,66 @@
-const express = require('express');
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const express = require("express");
+const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 const app = express();
-const port = 3000;
 
-app.use(express.static('public/hls'));
+app.use(express.static("public"));
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
-
-app.get('/start', (req, res) => {
-  if (!fs.existsSync('public/hls')) {
-    fs.mkdirSync('public/hls', { recursive: true });
-  }
-
-  // Remove old HLS files before starting a new stream
-  fs.readdir('public/hls', (err, files) => {
-    if (err) throw err;
-
-    for (const file of files) {
-      fs.unlink(path.join('public/hls', file), (err) => {
-        if (err) throw err;
-      });
-    }
-  });
-
-
-
-  const ffmpeg = spawn('ffmpeg', [
-    '-f', 'v4l2',
-    '-input_format', 'mjpeg',
-    '-video_size', '1920x1080',
-    '-i', '/dev/video0',
-    '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-tune', 'zerolatency',
-    '-vf', 'fps=25',
-    '-g', '50',
-    '-hls_time', '1',
-    '-hls_list_size', '5',
-    '-hls_wrap', '10',
-    '-start_number', '1',
-    'public/hls/stream.m3u8',
+app.get("/start", (req, res) => {
+  const ffmpeg = spawn("ffmpeg", [
+    "-i",
+    "/dev/video0",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-tune",
+    "zerolatency",
+    "-max_muxing_queue_size",
+    "1024",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
+    "-f",
+    "hls",
+    "-hls_time",
+    "2",
+    "-hls_list_size",
+    "10",
+    "-hls_flags",
+    "delete_segments",
+    "public/hls/stream.m3u8",
   ]);
 
-  ffmpeg.stderr.on('data', (data) => {
-    console.log(`ffmpeg stderr: ${data}`);
+  ffmpeg.stderr.on("data", (data) => {
+    console.error(`ffmpeg stderr: ${data}`);
   });
 
-  ffmpeg.on('exit', (code, signal) => {
-    console.log(`ffmpeg exited with code ${code} and signal ${signal}`);
-    res.end();
+  ffmpeg.on("exit", (code, signal) => {
+    console.error(`ffmpeg exited with code ${code} and signal ${signal}`);
   });
 
-  res.send('Started streaming');
+  res.sendStatus(200);
 });
 
-app.listen(port, () => {
-  console.log(`Video streaming server is running on http://localhost:${port}`);
+app.listen(3000, () => {
+  console.log("Video streaming server is running on http://localhost:3000");
+
+  // Clean up old HLS files on startup
+  fs.readdir("public/hls", (err, files) => {
+    if (err) {
+      console.error("Error reading public/hls directory:", err);
+      return;
+    }
+    files.forEach((file) => {
+      if (file.endsWith(".ts") || file.endsWith(".m3u8")) {
+        fs.unlink(path.join("public/hls", file), (err) => {
+          if (err) {
+            console.error("Error deleting old HLS file:", err);
+          }
+        });
+      }
+    });
+  });
 });
