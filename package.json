@@ -1,0 +1,23 @@
+{
+  "name": "video-stream",
+  "version": "1.0.0",
+  "description": "Please work, I just want a webcam to watch my cat.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juan7732/video-stream-js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juan7732/video-stream-js/issues"
+  },
+  "homepage": "https://github.com/juan7732/video-stream-js#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
